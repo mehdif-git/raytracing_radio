@@ -53,3 +53,13 @@ ray* simulate_ray(ray* r, scene* s, int n){
 
     return path;
 }
+
+
+uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int max_reflexions){
+    ray** rays = malloc(height*sizeof(ray*));
+    for (int i = 0; i < height; i++){
+        rays[i] = malloc(width * ray);
+        for (int j = 0; )
+    }
+
+}

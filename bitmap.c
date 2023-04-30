@@ -1,27 +1,31 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
 
 #include "bitmap.h"
 
 
 void write_int(FILE* file, int x, int bytes){
+    uint8_t r;
     for (int i = 0; i< bytes; i++){
-        fprintf("%c", x % 256);
+        r = x%256;
+        fwrite(&r, 1, 1, file);
         x /= 256;
     }
 }
 
 
-void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){*
+void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
     int padding;
     int datasize;
-    if (width % 4 == 0){
+    if (3*width % 4 == 0){
         padding = 0;
     } else {
-        padding = 4 - width%4;
+        padding = 4 - (3*width)%4;
     }
-    datasize = height*(width+padding);
+    datasize = height*(3*width+padding);
 
-    fwritef(file, "%s", "BM");
+    fwrite("BM", 2, 1, file);
     // file size
     write_int(file, 54+datasize, 4);
     // unused
@@ -37,9 +41,9 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){*
     // layers
     write_int(file, 1, 2);
     // bits per pixel
-    write_int(file, 8, 2);
-    // mode (8-bit)
-    write_int(file, 1, 4);
+    write_int(file, 24, 2);
+    // mode rgb
+    write_int(file, 0, 4);
     // size of raw bitmap data (including padding)
     write_int(file, datasize, 4);
     // print resolution (useless)
@@ -49,10 +53,12 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){*
 
 
     // actual pixel data
-    for (int i = 0; i<height; i++){
+    for (int i = height-1; i>=0; i--){
         for (int j = 0; j<width; j++){
-            write_int(file, pixels[i][j], 1);
-            write_int(file, 0, padding);
+            for (int k = 0; k<3; k++){
+                write_int(file, pixels[i][j], 1);
+            }
         }
+        write_int(file, 0, padding);
     }
 }

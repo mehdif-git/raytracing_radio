@@ -3,8 +3,11 @@
 
 
 typedef struct scene_s{
-    triangle* triangles;
+    vector camera_location;
+    vector camera_angle;
+    vector lighting_angle;
     int n_triangles;
+    triangle* triangles;
 } scene;
 
 
