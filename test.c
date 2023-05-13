@@ -2,24 +2,47 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 
 #include "geometry.h"
+#include "raytracing.h"
 #include "bitmap.h"
 
-int main(){
-    srand(time(NULL));
-    int n = 512;
-    uint8_t** img = malloc(n*sizeof(uint8_t*));
-    for (int i=0; i<n; i++){
-        img[i] = malloc(n*sizeof(uint8_t));
-        for (int j = 0; j<n; j++){
-            img[i][j] = i*j;
-        }
-    }
-    FILE* f = fopen("img.bmp", "wb");
 
-    bitmap_write(f, img, n, n);
+
+int main(){
+
+    FILE* f = fopen("sphere_mirror.obj", "r");
+    scene* s = load_scene(f);
+    fclose(f);
+
+
+    fprintf(stderr, "%d", s->n_triangles);
+
+    s->camera.origin.x = -5;
+    s->camera.origin.y = 0;
+    s->camera.origin.z = 5;
+
+    s->camera.direction.x = 1;
+    s->camera.direction.y = 0;
+    s->camera.direction.z = -1;
+
+    s->lighting_direction.x = 1;
+    s->lighting_direction.y = 0;
+    s->lighting_direction.z = -1;
+
+
+    uint8_t** pixels = render_scene(s, 360, 240, 1.03, 3);
+
+    char* path = malloc(128*sizeof(char));
+    time_t t;
+    time(&t);
+    sprintf(path, "renders/render_%s.bmp", ctime(&t));
+
+    f = fopen(path, "wb");
+
+    bitmap_write(f, pixels, 360, 240);
 
     fclose(f);
 
