@@ -75,7 +75,7 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
         On enregistre les distances des points de réflexions pour ne garder que le plus proche */
         int c = 0;
         for (int j=0; j<s->n_triangles; j++){
-            collisions[c] = reflect(r, s->triangles+j);
+            collisions[c] = reflect(path[i], s->triangles+j);
             if (collisions[c] != NULL){
                 distances[c] = distance(path[i]->origin, collisions[c]->origin);
                 c++;
@@ -114,7 +114,6 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
 uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int max_reflexions){
     ray r;
     ray** path;
-    int n = 0;
     double lum;
     uint8_t** pixels = malloc(height * sizeof(uint8_t*));
 
@@ -174,18 +173,16 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
             r.direction.y = new_y;
             
             path = simulate_ray(&r, s, max_reflexions);
-
-            n = 0;
+            int n = 0;
             while (path[n] != NULL){n++;}
-                //On illumine la dernière surface rencontrée
+            //On illumine la dernière surface rencontrée
             lum = - scalar_product(normalize(s->lighting_direction), normalize(path[n-1]->direction));
-        
-            if (lum<0){
-                lum = 0;
-            }
-
+            if(lum < 0){
+                lum = 200;
+            } 
             pixels[i][j] = (uint8_t) (lum * 255);
-
+            
+            //libération de la mémoire
             for (int i=1; i<max_reflexions; i++){
                 if (path[i] != NULL){
                     free(path[i]);

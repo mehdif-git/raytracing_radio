@@ -16,6 +16,8 @@ void write_int(FILE* file, int x, int bytes){
 
 void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
     //Here be dragons, I guess
+    // La première partie sert à donner des infos sur l'image
+    // Pour un bitmap, il faut que la taille de l'image soit divisible par 4
     int padding;
     int datasize;
     if (3*width % 4 == 0){
@@ -24,8 +26,10 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
         padding = 4 - (3*width)%4;
     }
     datasize = height*(3*width+padding);
-
+    
+    //On annonce que c'est un bitmap
     fwrite("BM", 2, 1, file);
+
     // file size
     write_int(file, 54+datasize, 4);
     // unused
@@ -40,7 +44,7 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
     write_int(file, height, 4);
     // layers
     write_int(file, 1, 2);
-    // bits per pixel
+    // bits per pixel (3*8)
     write_int(file, 24, 2);
     // mode rgb
     write_int(file, 0, 4);
@@ -51,10 +55,10 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
     // palette (useless)
     write_int(file, 0, 8);
 
-
     // actual pixel data
     for (int i = height-1; i>=0; i--){
         for (int j = 0; j<width; j++){
+            //On donne la même valeur pour r,g,b
             for (int k = 0; k<3; k++){
                 write_int(file, pixels[i][j], 1);
             }
