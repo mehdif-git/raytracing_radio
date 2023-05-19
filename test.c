@@ -9,24 +9,21 @@
 #include "raytracing.h"
 #include "bitmap.h"
 
-int main(){
+int main(int argc, char *argv[]){
     // On lance test nomFichier.obj resX resY h_fov max_ref
-    //assert (argc==6);
-    FILE* f = fopen("monke.obj", "r");
+    assert (argc==6);
+    FILE* f = fopen(argv[1], "r");
     scene* s = load_scene(f);
     fclose(f);
     
-    int resX = 360;
-    int resY = 240; 
-    int max_ref = 3; 
-    /*sscanf(argv[2], "%d", &resX);
+    int resX, resY, max_ref;
+    sscanf(argv[2], "%d", &resX);
     sscanf(argv[3], "%d", &resY);
     sscanf(argv[5], "%d", &max_ref);
-    */
-    double h_fov = 1.03;
-    /*
+    double h_fov;
     sscanf(argv[4], "%lf", &h_fov);
-    */
+    
+    //Mise en place de la caméra et du plan d'illumination
     s->camera.origin.x = -5;
     s->camera.origin.y = 0;
     s->camera.origin.z = 5;
