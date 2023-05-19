@@ -8,7 +8,6 @@ double length(vector v){
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
 
-
 vector vector_diff(vector u, vector v){
     vector res;
     res.x = u.x - v.x;
@@ -16,7 +15,6 @@ vector vector_diff(vector u, vector v){
     res.z = u.z - v.z;
     return res;
 }
-
 
 double distance(vector u, vector v){
     return length(vector_diff(u, v));
@@ -31,7 +29,6 @@ vector normalize(vector v){
     return res;
 }
 
-
 double scalar_product(vector u, vector v){
     return u.x * v.x + u.y * v.y + u.z * v.z;
 }
@@ -44,29 +41,26 @@ vector cross_product(vector u, vector v){
     return res;
 }
 
-
 vector* intersect(ray* r, triangle* t){
-    /* On calcul un vecteur normal au plan */
-    vector n = cross_product(vector_diff(t->a, t->b), vector_diff(t->a, t->c));
-
     /* L'équation du plan est sous la forme (n|v) = cste, cette constante est égale à (a|n)
     En notant la droite associée au rayon A + tu, on souhaite (A + ku | n) = (a|n)
     ie (A|n) + k(u|n) = (a|n)
     ou encore
     k = ( (a|n) - (A|n) ) / (u|n)
-    Le cas (u|n) = 0 renverra NULL sans autre forme de procès
+    Le cas (u|n) = 0 (rayon tangent au plan) renverra NULL sans autre forme de procès
     */
 
-    double s = scalar_product(r->direction, n);
+    double s = scalar_product(r->direction, t->n);
 
     if (0 == s){
         return NULL;
     }
 
-    double k = (scalar_product(t->a, n) - scalar_product(r->origin, n)) / s;
+    double k = (scalar_product(t->a, t->n) - scalar_product(r->origin, t->n)) / s;
 
-    /* Si t est négatif, le point d'intersection se situe du mauvais côté de la demie-droite
-    Si k est nul, l'origine du rayon est confondu avec le point d'intersection, on considère qu'il n'y a pas réflexion puisque le rayon part du triangle */
+    /* Si k est négatif, le point d'intersection se situe du mauvais côté de la demie-droite
+    Si k est nul, l'origine du rayon est confondu avec le point d'intersection, on considère qu'il n'y a pas réflexion puisque le rayon part du triangle 
+    */
     if (k<=0){
         return NULL;
     }
@@ -106,17 +100,15 @@ ray* reflect(ray* r, triangle* t){
     if (NULL == p){
         return NULL;
     }
-    // on calcule le vecteur normal au triangle
-    vector n = normalize(cross_product(vector_diff(t->a, t->b), vector_diff(t->a, t->c)));
     
     // on calcule la composante normale du vecteur incident
-    double normal_component = scalar_product(n, r->direction);
+    double normal_component = scalar_product(t->n, r->direction);
 
     // on inverse la composante normale pour créer le rayon réfléchi
     vector new_dir;
-    new_dir.x = r->direction.x - 2*n.x*normal_component;
-    new_dir.y = r->direction.y - 2*n.y*normal_component;
-    new_dir.z = r->direction.z - 2*n.z*normal_component;
+    new_dir.x = r->direction.x - 2*(t->n).x*normal_component;
+    new_dir.y = r->direction.y - 2*(t->n).y*normal_component;
+    new_dir.z = r->direction.z - 2*(t->n).z*normal_component;
 
     ray* res = malloc(sizeof(ray));
 
