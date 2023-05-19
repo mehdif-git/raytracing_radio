@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-
+#include <assert.h>
 
 #include "geometry.h"
 #include "raytracing.h"
@@ -11,9 +11,10 @@
 
 
 
-int main(){
-
-    FILE* f = fopen("sphere_mirror.obj", "r");
+int main(int argc, char *argv[]){
+    // On lance test nomFichier.obj
+    assert(argc==2);
+    FILE* f = fopen(argv[1], "r");
     scene* s = load_scene(f);
     fclose(f);
 
