@@ -45,9 +45,7 @@ scene* load_scene(FILE* obj_file){
             strtol(ptr+1, &ptr, 10);
             strtol(ptr+1, &ptr, 10);
             triangles[t_i].c = vertices[strtol(ptr+1, &ptr, 10)-1];
-            vector ab = vector_diff(triangles[t_i].a, triangles[t_i].b);
-            vector ac = vector_diff(triangles[t_i].a, triangles[t_i].c);
-            triangles[t_i].n = cross_product(ab,ac);
+            triangles[t_i].n = normalize(cross_product(vector_diff(triangles[t_i].a, triangles[t_i].b),vector_diff(triangles[t_i].a, triangles[t_i].c)));
             t_i++;
         }
     }
