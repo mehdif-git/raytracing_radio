@@ -76,7 +76,7 @@ ray** simulate_ray(ray* r, scene* s, int n){
     int last_triangle = -1;
 
     /* On simule n-1 réflexions */
-    for (int i = 0; i<n_max-1; i++){
+    for (int i = 0; i<n-1; i++){
         /* Pour chaque nouvelle réflexion on teste la collision avec chaque triangle de la scène
         On enregistre les distances des points de réflexions pour ne garder que le plus proche */
         int c = 0;
@@ -161,6 +161,8 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
 
     double window_length = 2*tan(horizontal_fov/2);
     double window_height = (double) height / width * window_length;
+
+    int n;
     
     //Génération du bitmap ligne par ligne
     for (int i = 0; i < height; i++){

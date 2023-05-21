@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
     // On lance test nomFichier.obj resX resY h_fov max_ref
     assert (argc==6);
     FILE* f = fopen(argv[1], "r");
-    scene* s = load_scene(f);
+    scene* s = load_scene(f, true, true);
     fclose(f);
     
     int resX, resY, max_ref;
