@@ -12,6 +12,7 @@ typedef struct triangle_s{
     vector a;
     vector b;
     vector c;
+    vector n;
 } triangle;
 
 typedef struct ray_s{
