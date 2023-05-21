@@ -55,9 +55,9 @@ void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
     // actual pixel data
     for (int i = height-1; i>=0; i--){
         for (int j = 0; j<width; j++){
-            for (int k = 0; k<3; k++){
-                write_int(file, pixels[i][j], 1);
-            }
+            write_int(file, pixels[i][j], 1);
+            write_int(file, pixels[i][j], 1);
+            write_int(file, 0, 1);
         }
         write_int(file, 0, padding);
     }
