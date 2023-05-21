@@ -1,5 +1,3 @@
-# Propagation des ondes radio par raytracing
+# Générateur de rendus 3D par raytracing à partir de fichiers .obj
 
-Code pour mon TIPE, où je simule la propagation des ondes radio dans une ville.
-
-En plus de ce code, l'add-on [Blender-GIS](https://github.com/domlysz/BlenderGIS) permet d'obtenir très facilement un modèle 3D de ville réelle.
+Code pour mon TIPE sur les puits de lumière.
