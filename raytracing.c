@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -6,8 +7,9 @@
 #include "geometry.h"
 #include "raytracing.h"
 
-// Chargement de la scène en mémoire depuis un fichier obj
-scene* load_scene(FILE* obj_file){
+scene* load_scene(FILE* obj_file, bool normals, bool textures){
+    // loads scene from .obj file
+    // only works with triangles for now
     char* buffer = malloc(1024*sizeof(char));
     int n_vertices = 0;
     int n_triangles = 0;
@@ -24,6 +26,7 @@ scene* load_scene(FILE* obj_file){
     //Création des tableaux de stockage
     vector* vertices = malloc(n_vertices*sizeof(vector));
     triangle* triangles = malloc(n_triangles*sizeof(triangle));
+
     rewind(obj_file);
 
     int v_i = 0;
@@ -39,11 +42,12 @@ scene* load_scene(FILE* obj_file){
             v_i++;
         } else if (buffer[0] == 'f'){ //On associe les points à leurs triangles respectifs
             triangles[t_i].a = vertices[strtol(buffer+2, &ptr, 10)-1];
-            strtol(ptr+1, &ptr, 10);
-            strtol(ptr+1, &ptr, 10);
+            // skip normals and textures
+            if (normals){strtol(ptr+1, &ptr, 10);}
+            if (textures){strtol(ptr+1, &ptr, 10);}
             triangles[t_i].b = vertices[strtol(ptr+1, &ptr, 10)-1];
-            strtol(ptr+1, &ptr, 10);
-            strtol(ptr+1, &ptr, 10);
+            if (normals){strtol(ptr+1, &ptr, 10);}
+            if (textures){strtol(ptr+1, &ptr, 10);}
             triangles[t_i].c = vertices[strtol(ptr+1, &ptr, 10)-1];
             triangles[t_i].n = normalize(cross_product(vector_diff(triangles[t_i].a, triangles[t_i].b),vector_diff(triangles[t_i].a, triangles[t_i].c)));
             t_i++;
@@ -58,16 +62,18 @@ scene* load_scene(FILE* obj_file){
     return s;
 }
 
-// Génération du chemin que prend un rayon
-ray** simulate_ray(ray* r, scene* s, int n_max){
-    ray** path = malloc(n_max*sizeof(ray));
-    for (int i=0; i<n_max; i++){
+
+ray** simulate_ray(ray* r, scene* s, int n){
+    ray** path = malloc((n+1)*sizeof(ray));
+    for (int i=0; i<n+1; i++){
         path[i] = NULL;
     }
     path[0] = r;
     //Tableaux notant les collisions et la distance du rayon à tous les triangles rencontrés
     ray** collisions = malloc(sizeof(ray*) * s->n_triangles);
     double* distances = malloc(sizeof(double) * s->n_triangles);
+    int* collided_triangles = malloc(sizeof(int) * s->n_triangles);
+    int last_triangle = -1;
 
     /* On simule n-1 réflexions */
     for (int i = 0; i<n_max-1; i++){
@@ -75,26 +81,35 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
         On enregistre les distances des points de réflexions pour ne garder que le plus proche */
         int c = 0;
         for (int j=0; j<s->n_triangles; j++){
-            collisions[c] = reflect(path[i], s->triangles+j);
-            if (collisions[c] != NULL){
-                distances[c] = distance(path[i]->origin, collisions[c]->origin);
-                c++;
+            if (j != last_triangle){
+                collisions[c] = reflect(path[i], s->triangles+j);
+                if (collisions[c] != NULL){
+                    distances[c] = distance(path[i]->origin, collisions[c]->origin);
+                    collided_triangles[c] = j;
+                    c++;
+                }
             }
         }
         /* Dans le cas où le rayon ne rencontre aucun triangle on met fin à la simulation */
         if (0 == c){
             break;
         }
-        /* On trouve le point d'intersection le plus proche */
+
+        /* On trouve le point d'intersection le plus proche mais non nul */
         int min_i = 0;
-        for (int j = 1; j<c; j++){
-            if (distances[j] < distances[min_i]){
+
+        for (int j = min_i; j<c; j++){
+            if (distances[j] < distances[min_i] && distances[j] > 0){
                 min_i = j;
             }
         }
 
         /* On ajoute au chemin le nouveau rayon */
         path[i+1] = collisions[min_i];
+
+        /* On not le triangle correspondant comme étant le dernier percuté */
+
+        last_triangle = collided_triangles[min_i];
 
         /* On libère les collisions ignorées */
         for (int j = 0; j<c; j++){
@@ -105,6 +120,7 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
     }
     free(distances);
     free(collisions);
+    free(collided_triangles);
 
     return path;
 }
@@ -173,9 +189,16 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
             r.direction.y = new_y;
             
             path = simulate_ray(&r, s, max_reflexions);
-            int n = 0;
+
+
+            // On trouve le dernier rayon du chemin
+            n = 0;
             while (path[n] != NULL){n++;}
-            //On illumine la dernière surface rencontrée
+
+
+
+            // On calcule la luminosité
+
             lum = - scalar_product(normalize(s->lighting_direction), normalize(path[n-1]->direction));
             if(lum < 0){
                 lum = 200;

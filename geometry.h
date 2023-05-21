@@ -23,7 +23,7 @@ typedef struct ray_s{
 /* Renvoie la norme du vecteur v */
 double length(vector v);
 
-/* Renvoie v normélisé */
+/* Renvoie v normalisé */
 vector normalize(vector v);
 
 /* Renvoie la distance entre u et v */
