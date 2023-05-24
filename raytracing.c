@@ -34,7 +34,7 @@ scene* load_scene(FILE* obj_file, bool normals, bool textures){
 
     char* ptr;
 
-    while (fgets(buffer, 1024, obj_file)){ //On parse le fichier pour en tirer les coords des points
+    while (fgets(buffer, 1024, obj_file)){ //On parse le fichier pour en tirer les coordonnées des points
         if (buffer[0] == 'v' && buffer[1] == ' '){
             vertices[v_i].x = strtof(buffer+2, &ptr);
             vertices[v_i].y = strtof(ptr+1, &ptr);
@@ -50,6 +50,9 @@ scene* load_scene(FILE* obj_file, bool normals, bool textures){
             if (textures){strtol(ptr+1, &ptr, 10);}
             triangles[t_i].c = vertices[strtol(ptr+1, &ptr, 10)-1];
             triangles[t_i].n = normalize(cross_product(vector_diff(triangles[t_i].a, triangles[t_i].b),vector_diff(triangles[t_i].a, triangles[t_i].c)));
+            triangles[t_i].reflexion_coeff = 0;
+            triangles[t_i].diffusion_coeff = 1;
+
             t_i++;
         }
     }
@@ -57,34 +60,35 @@ scene* load_scene(FILE* obj_file, bool normals, bool textures){
     scene* s = malloc(sizeof(scene));
     s->n_triangles = n_triangles;
     s->triangles = triangles;
-    printf("Fin du chargement d'une scène composée de %d triangles.\n", s->n_triangles);
+    fprintf(stderr, "Fin du chargement d'une scène composée de %d triangles.\n", s->n_triangles);
     free(vertices);
+    free(buffer);
     return s;
 }
 
 
-ray** simulate_ray(ray* r, scene* s, int n){
-    ray** path = malloc((n+1)*sizeof(ray));
-    for (int i=0; i<n+1; i++){
+ray** simulate_ray(ray* r, scene* s, int n_max){
+    ray** path = malloc((n_max+1)*sizeof(ray));
+    for (int i=0; i<n_max+1; i++){
         path[i] = NULL;
     }
     path[0] = r;
     //Tableaux notant les collisions et la distance du rayon à tous les triangles rencontrés
-    ray** collisions = malloc(sizeof(ray*) * s->n_triangles);
+    vector** collisions = malloc(sizeof(vector*) * s->n_triangles);
     double* distances = malloc(sizeof(double) * s->n_triangles);
     int* collided_triangles = malloc(sizeof(int) * s->n_triangles);
     int last_triangle = -1;
 
     /* On simule n-1 réflexions */
-    for (int i = 0; i<n-1; i++){
+    for (int i = 0; i<n_max-1; i++){
         /* Pour chaque nouvelle réflexion on teste la collision avec chaque triangle de la scène
         On enregistre les distances des points de réflexions pour ne garder que le plus proche */
         int c = 0;
         for (int j=0; j<s->n_triangles; j++){
             if (j != last_triangle){
-                collisions[c] = reflect(path[i], s->triangles+j);
+                collisions[c] = intersect(path[i], s->triangles+j);
                 if (collisions[c] != NULL){
-                    distances[c] = distance(path[i]->origin, collisions[c]->origin);
+                    distances[c] = distance(path[i]->origin, *(collisions[c]));
                     collided_triangles[c] = j;
                     c++;
                 }
@@ -92,6 +96,7 @@ ray** simulate_ray(ray* r, scene* s, int n){
         }
         /* Dans le cas où le rayon ne rencontre aucun triangle on met fin à la simulation */
         if (0 == c){
+            // fprintf(stderr, "%s", "no colision\n");
             break;
         }
 
@@ -104,18 +109,25 @@ ray** simulate_ray(ray* r, scene* s, int n){
             }
         }
 
-        /* On ajoute au chemin le nouveau rayon */
-        path[i+1] = collisions[min_i];
-
-        /* On not le triangle correspondant comme étant le dernier percuté */
-
+        /* On note le triangle correspondant comme étant le dernier percuté */
         last_triangle = collided_triangles[min_i];
 
-        /* On libère les collisions ignorées */
+        /* On ajoute au chemin le nouveau rayon réfléchi ou diffusé */
+        double x = (double) rand() / RAND_MAX;
+        if (x < s->triangles[last_triangle].reflexion_coeff){
+            path[i+1] = reflect(path[i], s->triangles+last_triangle);
+        } else if (x < s->triangles[last_triangle].reflexion_coeff + s->triangles[last_triangle].diffusion_coeff){
+            path[i+1] = diffuse(path[i], s->triangles+last_triangle);
+        }
+
+        if (path[i+1] == NULL){
+            fprintf(stderr,"%s", "bruh");
+        }
+
+
+        /* On libère les collisions */
         for (int j = 0; j<c; j++){
-            if (j != min_i && collisions[j] != NULL){
-                free(collisions[j]);
-            }
+            free(collisions[j]);
         }
     }
     free(distances);
@@ -125,9 +137,9 @@ ray** simulate_ray(ray* r, scene* s, int n){
     return path;
 }
 
-//Création d'une matrice d'entiers entre 0 et 255 pour générer un bitmap
-//Le champ de vision sur l'horizontale doit être entré en radians
-uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int max_reflexions){
+// Création d'une matrice d'entiers entre 0 et 255 pour générer un bitmap
+// Le champ de vision sur l'horizontale doit être entré en radians
+uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int rays_per_pixel, int max_reflexions){
     ray r;
     ray** path;
     double lum;
@@ -164,17 +176,18 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
 
     int n;
     
-    //Génération du bitmap ligne par ligne
+    // Génération du bitmap ligne par ligne
     for (int i = 0; i < height; i++){
         pixels[i] = malloc(width * sizeof(uint8_t));
-        //Génération des rayons de manière uniforme sur l'aire donnée
+        fprintf(stderr, "Ligne %d sur %d\n", i, height);
+        // Génération des rayons de manière uniforme sur l'aire donnée
         for (int j = 0; j < width; j++){
             r.origin = s->camera.origin;
             r.direction.x = 1;
             r.direction.y = - ((double) j/width - 0.5) * window_length;
             r.direction.z = - ((double) i/height - 0.5) * window_height;
 
-            // vertical rotation (prodruit matriciel tmtc)
+            // rotation verticale autour de l'axe y
 
             double new_x = cos(cam_vert_angle) * r.direction.x - sin(cam_vert_angle) * r.direction.z;
             double new_z = cos(cam_vert_angle) * r.direction.z + sin(cam_vert_angle) * r.direction.x;
@@ -182,38 +195,46 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
             r.direction.x = new_x;
             r.direction.z = new_z;
 
-            // horizontal rotation
+            // rotation horizontale autour de l'axe z
 
             new_x = cos(cam_horiz_angle) * r.direction.x - sin(cam_horiz_angle) * r.direction.y;
             double new_y = cos(cam_horiz_angle) * r.direction.y + sin(cam_horiz_angle) * r.direction.x;
 
             r.direction.x = new_x;
             r.direction.y = new_y;
-            
-            path = simulate_ray(&r, s, max_reflexions);
+
+            double total = 0;
 
 
-            // On trouve le dernier rayon du chemin
-            n = 0;
-            while (path[n] != NULL){n++;}
+            for (int k=0; k<rays_per_pixel; k++){
+
+                // fprintf(stderr, "%d %d %d\n", i, j, k);
+
+                path = simulate_ray(&r, s, max_reflexions);
+
+
+                // On trouve le dernier rayon du chemin
+                n = 0;
+                while (path[n] != NULL){n++;}
 
 
 
-            // On calcule la luminosité
+                // On calcule la luminosité
 
-            lum = - scalar_product(normalize(s->lighting_direction), normalize(path[n-1]->direction));
-            if(lum < 0){
-                lum = 200;
-            } 
-            pixels[i][j] = (uint8_t) (lum * 255);
-            
-            //libération de la mémoire
-            for (int i=1; i<max_reflexions; i++){
-                if (path[i] != NULL){
+                lum = - dot_product(normalize(s->lighting_direction), normalize(path[n-1]->direction));
+                if(lum < 0){
+                    lum = 0;
+                }
+
+                total += lum;
+                
+                // Libération de la mémoire
+                for (int i=1; i<n; i++){
                     free(path[i]);
                 }
+                free(path);
             }
-            free(path);
+            pixels[i][j] = (uint8_t) (total / rays_per_pixel * 255);
         }
     }
     return pixels;

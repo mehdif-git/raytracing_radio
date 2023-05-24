@@ -13,6 +13,8 @@ typedef struct triangle_s{
     vector b;
     vector c;
     vector n;
+    double reflexion_coeff;
+    double diffusion_coeff;
 } triangle;
 
 typedef struct ray_s{
@@ -33,7 +35,7 @@ double distance(vector u, vector v);
 vector vector_diff(vector u, vector v);
 
 /* Renvoie le produit scalaire de u et v */
-double scalar_product(vector u, vector v);
+double dot_product(vector u, vector v);
 
 /* Renvoie le produit vectoriel de u et v */
 vector cross_product(vector u, vector v);
@@ -45,6 +47,9 @@ vector* intersect(ray* r, triangle* t);
 /* Renvoie, s'il existe, le rayon réfléchi à partir du rayon incident et d'un triangle 
 Renvoie NULL si l'intersection n'existe pas */
 ray* reflect(ray* r, triangle* t);
+
+/* Renvoie en cas de collision un rayon réfléchi dans une direction aléatoire */
+ray* diffuse(ray* r, triangle* t);
 
 
 #endif

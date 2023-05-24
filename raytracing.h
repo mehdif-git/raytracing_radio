@@ -16,6 +16,6 @@ scene* load_scene(FILE* obj_file, bool normals, bool textures);
 ray** simulate_ray(ray* r, scene* s, int n);
 
 // Donne la matrice des illuminations pour chaque pixel de l'image
-uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int max_reflexions);
+uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int rays_per_pixel, int max_reflexions);
 
 #endif

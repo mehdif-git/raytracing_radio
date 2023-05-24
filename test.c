@@ -5,6 +5,7 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #include "geometry.h"
 #include "raytracing.h"
@@ -13,17 +14,28 @@
 
 int main(int argc, char *argv[]){
     // On lance test nomFichier.obj resX resY h_fov max_ref
-    assert (argc==6);
+    assert (argc==7);
     FILE* f = fopen(argv[1], "r");
     scene* s = load_scene(f, true, true);
+
+
+    // donut specific
+    s->triangles[s->n_triangles-1].reflexion_coeff = 1;
+    s->triangles[s->n_triangles-1].diffusion_coeff = 0;
+    s->triangles[s->n_triangles-2].reflexion_coeff = 1;
+    s->triangles[s->n_triangles-2].diffusion_coeff = 1;
+
+
     fclose(f);
     
-    int resX, resY, max_ref;
+    int resX, resY, max_ref, iterations;
     sscanf(argv[2], "%d", &resX);
     sscanf(argv[3], "%d", &resY);
     sscanf(argv[5], "%d", &max_ref);
+    sscanf(argv[6], "%d", &iterations);
     double h_fov;
     sscanf(argv[4], "%lf", &h_fov);
+
     
     //Mise en place de la caméra et du plan d'illumination
 
@@ -39,7 +51,9 @@ int main(int argc, char *argv[]){
     s->lighting_direction.y = 0;
     s->lighting_direction.z = -1;
 
-    uint8_t** pixels = render_scene(s, resX, resY, h_fov, max_ref);
+    srand(time(NULL));
+
+    uint8_t** pixels = render_scene(s, resX, resY, h_fov / 180 * M_PI, iterations, max_ref);
 
     char* path = malloc(128*sizeof(char));
     time_t t;
@@ -52,28 +66,17 @@ int main(int argc, char *argv[]){
 
     fclose(f);
 
-    /*
-    scene s;
-    s.n_triangles = 2;
-    s.triangles = malloc(2*sizeof(triangle));
-    s.triangles[0].a = (vector) {1, 1, 0};
-    s.triangles[0].b = (vector) {1, -1, 0};
-    s.triangles[0].c = (vector) {1, 0, 1};
-    s.triangles[1].a = (vector) {-1, 1, 0};
-    s.triangles[1].b = (vector) {-1, -1, 0};
-    s.triangles[1].c = (vector) {-1, 0, 1};
+    free(path);
 
-    ray r;
-    r.origin = (vector) {0,0,0};
-    r.direction= (vector) {1,0,0};
+    free(s->triangles);
+    free(s);
 
 
-    ray** path = simulate_ray(&r, &s, 10);
-
-    for (int i=0; i<10; i++){
-        printf("%f %f %f\n", path[i]->origin.x, path[i]->origin.y, path[i]->origin.z);
+    for (int i = 0; i < resY; i++){
+        free(pixels[i]);
     }
-    */
+
+    free(pixels);
 
     return 0;
 }

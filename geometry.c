@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 #include "geometry.h"
@@ -29,7 +30,7 @@ vector normalize(vector v){
     return res;
 }
 
-double scalar_product(vector u, vector v){
+double dot_product(vector u, vector v){
     return u.x * v.x + u.y * v.y + u.z * v.z;
 }
 
@@ -50,13 +51,14 @@ vector* intersect(ray* r, triangle* t){
     Le cas (u|n) = 0 (rayon tangent au plan) renverra NULL sans autre forme de procès
     */
 
-    double s = scalar_product(r->direction, t->n);
+
+    double s = dot_product(r->direction, t->n);
 
     if (0 == s){
         return NULL;
     }
 
-    double k = (scalar_product(t->a, t->n) - scalar_product(r->origin, t->n)) / s;
+    double k = (dot_product(t->a, t->n) - dot_product(r->origin, t->n)) / s;
 
     /* Si k est négatif, le point d'intersection se situe du mauvais côté de la demie-droite
     Si k est nul, l'origine du rayon est confondu avec le point d'intersection, on considère qu'il n'y a pas réflexion puisque le rayon part du triangle 
@@ -78,7 +80,7 @@ vector* intersect(ray* r, triangle* t){
     vector AB = vector_diff(t->b, t->a);
     vector AC = vector_diff(t->c, t->a);
 
-    if (scalar_product(cross_product(AP, AB), cross_product(AP, AC)) > 0){
+    if (dot_product(cross_product(AP, AB), cross_product(AP, AC)) > 0){
         free(p);
         return NULL;
     }
@@ -87,7 +89,7 @@ vector* intersect(ray* r, triangle* t){
     vector BC = vector_diff(t->c, t->b);
 
     /* Sachant BA = -AB, la condition est renversée */
-    if (scalar_product(cross_product(BP, AB), cross_product(BP, BC)) < 0){
+    if (dot_product(cross_product(BP, AB), cross_product(BP, BC)) < 0){
         free(p);
         return NULL;
     }
@@ -102,7 +104,7 @@ ray* reflect(ray* r, triangle* t){
     }
     
     // on calcule la composante normale du vecteur incident
-    double normal_component = scalar_product(t->n, r->direction);
+    double normal_component = dot_product(t->n, r->direction);
 
     // on inverse la composante normale pour créer le rayon réfléchi
     vector new_dir;
@@ -114,6 +116,37 @@ ray* reflect(ray* r, triangle* t){
 
     res->origin = *p;
     res->direction = new_dir;
+
+    free(p);
+
+    return res;
+}
+
+
+
+ray* diffuse(ray* r, triangle* t){
+    vector* p = intersect(r, t);
+
+    if (NULL == p){
+        return NULL;
+    }
+
+    ray* res = malloc(sizeof(ray));
+
+    res->origin = *p;
+
+    double theta, phi;
+
+
+    /* on génère deux angles pour créer un vecteur unitaire aléatoire
+    on utilise une méthode de Las Vegas pour que le vecteur soit du bon côté du plan du triangle */
+    do{
+        theta = (double) rand() / RAND_MAX * 2 * M_PI;
+        phi = (double) rand() / RAND_MAX * M_PI;
+        res->direction.x = sin(phi)*cos(theta);
+        res->direction.y = sin(phi)*sin(theta);
+        res->direction.z = cos(phi);
+    } while (dot_product(res->direction, r->direction) > 0);
 
     free(p);
 
