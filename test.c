@@ -13,19 +13,10 @@
 
 
 int main(int argc, char *argv[]){
-    // On lance test nomFichier.obj resX resY h_fov max_ref
+    // On lance test nomFichier.obj resX resY h_fov max_ref iter
     assert (argc==7);
     FILE* f = fopen(argv[1], "r");
     scene* s = load_scene(f, true, true);
-
-
-    // donut specific
-    s->triangles[s->n_triangles-1].reflexion_coeff = 1;
-    s->triangles[s->n_triangles-1].diffusion_coeff = 0;
-    s->triangles[s->n_triangles-2].reflexion_coeff = 1;
-    s->triangles[s->n_triangles-2].diffusion_coeff = 1;
-
-
     fclose(f);
     
     int resX, resY, max_ref, iterations;
@@ -78,5 +69,5 @@ int main(int argc, char *argv[]){
 
     free(pixels);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

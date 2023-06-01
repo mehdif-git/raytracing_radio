@@ -4,7 +4,6 @@
 
 #include "bitmap.h"
 
-//Permet d'écrire le reste de la DE d'un entier quelconque par 256 dans un fichier
 void write_int(FILE* file, int x, int bytes){
     uint8_t r;
     for (int i = 0; i< bytes; i++){
@@ -15,7 +14,6 @@ void write_int(FILE* file, int x, int bytes){
 }
 
 void bitmap_write(FILE* file, uint8_t** pixels, int width, int height){
-    //Here be dragons, I guess
     // La première partie sert à donner des infos sur l'image
     // Pour un bitmap, il faut que la taille de l'image soit divisible par 4
     int padding;

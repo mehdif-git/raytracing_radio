@@ -2,6 +2,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -fsanitize=address -O2
 LDFLAGS = -lm
 
+init: 
+	mkdir renders && mkdir models
+
 all: test
 
 test: bitmap.o geometry.o raytracing.o test.o

@@ -1,6 +1,7 @@
 #ifndef __GEOMETRY_H
 #define __GEOMETRY_H
 
+extern const double wavelength;
 
 typedef struct vector_s{
     double x;
@@ -13,13 +14,13 @@ typedef struct triangle_s{
     vector b;
     vector c;
     vector n;
-    double reflexion_coeff;
-    double diffusion_coeff;
 } triangle;
 
 typedef struct ray_s{
     vector origin;
     vector direction;
+    double phase;
+    double power;
 } ray;
 
 /* Renvoie la norme du vecteur v */
@@ -46,7 +47,7 @@ vector* intersect(ray* r, triangle* t);
 
 /* Renvoie, s'il existe, le rayon réfléchi à partir du rayon incident et d'un triangle 
 Renvoie NULL si l'intersection n'existe pas */
-ray* reflect(ray* r, triangle* t);
+ray* reflect(ray* r, triangle* t, double _Complex ref_index, vector pola);
 
 /* Renvoie en cas de collision un rayon réfléchi dans une direction aléatoire */
 ray* diffuse(ray* r, triangle* t);

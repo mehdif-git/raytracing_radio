@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-
+#include <complex.h>
 #include "geometry.h"
 
 
@@ -21,13 +21,17 @@ double distance(vector u, vector v){
     return length(vector_diff(u, v));
 }
 
+vector extern_prod(vector v, double coeff){
+  vector res;
+  res.x = coeff * v.x;
+  res.y = coeff * v.y;
+  res.z = coeff * v.z;
+  return res;
+}
+
 vector normalize(vector v){
-    double l = length(v);
-    vector res;
-    res.x = v.x/l;
-    res.y = v.y/l;
-    res.z = v.z/l;
-    return res;
+  double l = length(v);
+  return extern_prod(v, 1/l);
 }
 
 double dot_product(vector u, vector v){
@@ -97,7 +101,7 @@ vector* intersect(ray* r, triangle* t){
     return p;
 }
 
-ray* reflect(ray* r, triangle* t){
+ray* reflect(ray* r, triangle* t, double complex ref_index, vector pola){
     vector* p = intersect(r, t);
     if (NULL == p){
         return NULL;
@@ -111,17 +115,29 @@ ray* reflect(ray* r, triangle* t){
     new_dir.x = r->direction.x - 2*(t->n).x*normal_component;
     new_dir.y = r->direction.y - 2*(t->n).y*normal_component;
     new_dir.z = r->direction.z - 2*(t->n).z*normal_component;
+    
+    //On calcule la puissance du rayon réfléchi ainsi que la phase du champ E associé
 
+    vector eik = normalize(r->direction);
+    double te_prop = length(cross_product(eik, pola));
+    double complex cos_in = dot_product(eik, t->n) + 0*I;
+    double complex sin_in = sin(acos(cos_in)) + 0*I;
+    double complex R_te = (cos_in - csqrt(ref_index - (sin_in * sin_in)))/(cos_in + csqrt(ref_index - (sin_in * sin_in)));
+    double complex R_tm = (ref_index * cos_in - csqrt(ref_index - (sin_in * sin_in))) /(ref_index * cos_in + csqrt(ref_index - (sin_in * sin_in)));
+
+    double pow_te = cabs(R_te) * cabs(R_te);
+    double pow_tm = cabs(R_tm) * cabs(R_tm);
+    double new_power = r->power * (te_prop * pow_te + (1-te_prop) * pow_tm); 
     ray* res = malloc(sizeof(ray));
 
     res->origin = *p;
     res->direction = new_dir;
-
+    res->power = new_power;
+    res-> phase = (2 * M_PI / wavelength) * length(*p) + (M_PI / 2);
     free(p);
 
     return res;
 }
-
 
 
 ray* diffuse(ray* r, triangle* t){

@@ -3,13 +3,17 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-
+#include <complex.h>
 #include "geometry.h"
 #include "raytracing.h"
 
+const double complex refractive_index = 2.31 - 0.12 * I; // Indice de réfraction du béton
+const vector vert_pol = (vector) {0,1,0};
+const double wavelength = 0.3;
+
 scene* load_scene(FILE* obj_file, bool normals, bool textures){
-    // loads scene from .obj file
-    // only works with triangles for now
+    // Charge une scène à partir d'un fichier obj
+    // Ne fonctionne qu'avec des triangles
     char* buffer = malloc(1024*sizeof(char));
     int n_vertices = 0;
     int n_triangles = 0;
@@ -50,8 +54,6 @@ scene* load_scene(FILE* obj_file, bool normals, bool textures){
             if (textures){strtol(ptr+1, &ptr, 10);}
             triangles[t_i].c = vertices[strtol(ptr+1, &ptr, 10)-1];
             triangles[t_i].n = normalize(cross_product(vector_diff(triangles[t_i].a, triangles[t_i].b),vector_diff(triangles[t_i].a, triangles[t_i].c)));
-            triangles[t_i].reflexion_coeff = 0;
-            triangles[t_i].diffusion_coeff = 1;
 
             t_i++;
         }
@@ -112,18 +114,12 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
         /* On note le triangle correspondant comme étant le dernier percuté */
         last_triangle = collided_triangles[min_i];
 
-        /* On ajoute au chemin le nouveau rayon réfléchi ou diffusé */
-        double x = (double) rand() / RAND_MAX;
-        if (x < s->triangles[last_triangle].reflexion_coeff){
-            path[i+1] = reflect(path[i], s->triangles+last_triangle);
-        } else if (x < s->triangles[last_triangle].reflexion_coeff + s->triangles[last_triangle].diffusion_coeff){
-            path[i+1] = diffuse(path[i], s->triangles+last_triangle);
-        }
+        /* On ajoute au chemin le nouveau rayon réfléchi */
+        path[i+1] = reflect(path[i], s->triangles+last_triangle, refractive_index, vert_pol);
 
         if (path[i+1] == NULL){
             fprintf(stderr,"%s", "bruh");
         }
-
 
         /* On libère les collisions */
         for (int j = 0; j<c; j++){
@@ -216,8 +212,6 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
                 // On trouve le dernier rayon du chemin
                 n = 0;
                 while (path[n] != NULL){n++;}
-
-
 
                 // On calcule la luminosité
 
