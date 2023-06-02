@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -fsanitize=address -O2
+#CFLAGS = -Wall -Wextra -g -fsanitize=address -O2
+CFLAGS = -O3
 LDFLAGS = -lm
 
 init: 

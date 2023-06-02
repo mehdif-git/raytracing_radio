@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include <math.h>
 #include <complex.h>
@@ -119,15 +120,23 @@ ray* reflect(ray* r, triangle* t, double complex ref_index, vector pola){
     //On calcule la puissance du rayon réfléchi ainsi que la phase du champ E associé
 
     vector eik = normalize(r->direction);
+    
+    double n_bet = creal(ref_index);
     double te_prop = length(cross_product(eik, pola));
-    double complex cos_in = dot_product(eik, t->n) + 0*I;
-    double complex sin_in = sin(acos(cos_in)) + 0*I;
-    double complex R_te = (cos_in - csqrt(ref_index - (sin_in * sin_in)))/(cos_in + csqrt(ref_index - (sin_in * sin_in)));
-    double complex R_tm = (ref_index * cos_in - csqrt(ref_index - (sin_in * sin_in))) /(ref_index * cos_in + csqrt(ref_index - (sin_in * sin_in)));
+    
+    double cos_in = fabs(dot_product(eik, t->n));
+    double sin_in = sin(acos(cos_in));
+    double cos_tr = sqrt(1 - (1/n_bet)*(1/n_bet)*sin_in*sin_in);
+    
+    double R_te = (cos_in - n_bet * cos_tr)/(cos_in + n_bet * cos_tr);
+    double R_tm = (n_bet * cos_in - cos_tr)/(n_bet * cos_in + cos_tr);
 
-    double pow_te = cabs(R_te) * cabs(R_te);
-    double pow_tm = cabs(R_tm) * cabs(R_tm);
-    double new_power = r->power * (te_prop * pow_te + (1-te_prop) * pow_tm); 
+    double pow_te = fabs(R_te) * fabs(R_te);
+    double pow_tm = fabs(R_tm) * fabs(R_tm);
+
+    //fprintf(stderr, "Indice béton: %f\n Proportion TE: %f\n Cos incident: %f\n Sin incident: %f\n Cos transmis: %f\n R_te: %f\n R_tm: %f\n", n_bet, te_prop, cos_in,sin_in,cos_tr,R_te,R_tm);
+    
+    double new_power = r->power * (te_prop * pow_te + (1-te_prop) *pow_tm); 
     ray* res = malloc(sizeof(ray));
 
     res->origin = *p;

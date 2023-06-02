@@ -2,8 +2,8 @@
 #define __RAYTRACING_H
 
 typedef struct scene_s{
-    ray camera;
-    vector lighting_direction;
+    vector tx;
+    vector rx;
     int n_triangles;
     triangle* triangles;
     vector* normals;

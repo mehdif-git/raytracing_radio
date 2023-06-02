@@ -135,10 +135,9 @@ ray** simulate_ray(ray* r, scene* s, int n_max){
 
 // Création d'une matrice d'entiers entre 0 et 255 pour générer un bitmap
 // Le champ de vision sur l'horizontale doit être entré en radians
-uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, int rays_per_pixel, int max_reflexions){
+uint8_t** render_scene(scene* s, int width, int height, int rays_per_pixel, int max_reflexions){
     ray r;
     ray** path;
-    double lum;
     uint8_t** pixels = malloc(height * sizeof(uint8_t*));
 
     //Classique arctan(y/x) pour trouver l'angle de la caméra
@@ -175,7 +174,7 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
     // Génération du bitmap ligne par ligne
     for (int i = 0; i < height; i++){
         pixels[i] = malloc(width * sizeof(uint8_t));
-        fprintf(stderr, "Ligne %d sur %d\n", i, height);
+       fprintf(stderr, "Ligne %d sur %d\n", i, height);
         // Génération des rayons de manière uniforme sur l'aire donnée
         for (int j = 0; j < width; j++){
             r.origin = s->camera.origin;
@@ -198,7 +197,7 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
 
             r.direction.x = new_x;
             r.direction.y = new_y;
-
+            r.power = 1;
             double total = 0;
 
 
@@ -208,27 +207,19 @@ uint8_t** render_scene(scene* s, int width, int height, double horizontal_fov, i
 
                 path = simulate_ray(&r, s, max_reflexions);
 
-
                 // On trouve le dernier rayon du chemin
                 n = 0;
                 while (path[n] != NULL){n++;}
 
                 // On calcule la luminosité
-
-                lum = - dot_product(normalize(s->lighting_direction), normalize(path[n-1]->direction));
-                if(lum < 0){
-                    lum = 0;
-                }
-
-                total += lum;
-                
+                total += path[n-1]->power;
                 // Libération de la mémoire
                 for (int i=1; i<n; i++){
                     free(path[i]);
                 }
                 free(path);
             }
-            pixels[i][j] = (uint8_t) (total / rays_per_pixel * 255);
+            pixels[i][j] = (uint8_t) (2*total / rays_per_pixel * 255);
         }
     }
     return pixels;

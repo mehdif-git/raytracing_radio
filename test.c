@@ -30,17 +30,17 @@ int main(int argc, char *argv[]){
     
     //Mise en place de la caméra et du plan d'illumination
 
-    s->camera.origin.x = -5;
-    s->camera.origin.y = 0;
-    s->camera.origin.z = 5;
+    s->camera.origin.x = -360;
+    s->camera.origin.y = 111;
+    s->camera.origin.z = 163;
 
-    s->camera.direction.x = 1;
+    s->camera.direction.x = 0.87;
     s->camera.direction.y = 0;
-    s->camera.direction.z = -1;
+    s->camera.direction.z = -1/2;
 
-    s->lighting_direction.x = 0;
+    s->lighting_direction.x = 0.87;
     s->lighting_direction.y = 0;
-    s->lighting_direction.z = -1;
+    s->lighting_direction.z = -1/2;
 
     srand(time(NULL));
 
