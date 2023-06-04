@@ -20,5 +20,5 @@ main_fast: geometry.o raytracing.o main.o
 	$(CC) -c $(CFLAGS) $< -o $@ 
 
 clean:
-	rm -f *.o test
+	rm -f *.o main_safe
 
