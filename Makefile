@@ -1,15 +1,20 @@
 CC = gcc
-#CFLAGS = -Wall -Wextra -g -fsanitize=address -O2
-CFLAGS = -O3
+SAFEFLAGS = -Wall -Wextra -g -fsanitize=address -O2
+FASTFLAGS = -O3
 LDFLAGS = -lm
 
 init: 
 	mkdir renders && mkdir models
 
-all: test
+safe: main_safe
 
-test: bitmap.o geometry.o raytracing.o test.o
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+main_safe: geometry.o raytracing.o main.o
+	$(CC) $(SAFEFLAGS) $^ -o $@ $(LDFLAGS)
+
+fast: main_fast
+
+main_fast: geometry.o raytracing.o main.o
+	$(CC) $(FASTFLAGS) $^ -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $< -o $@ 

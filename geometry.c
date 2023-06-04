@@ -30,6 +30,11 @@ vector extern_prod(vector v, double coeff){
   return res;
 }
 
+vector vector_add(vector u, vector v){
+  vector minus_v = extern_prod(v, -1);
+  return vector_diff(u, minus_v);
+}
+
 vector normalize(vector v){
   double l = length(v);
   return extern_prod(v, 1/l);
@@ -47,15 +52,26 @@ vector cross_product(vector u, vector v){
     return res;
 }
 
+vector sph_to_cart(double r, double theta, double phi){
+    vector res;
+    res.x = sin(theta)*sin(phi)*r;
+    res.y = cos(theta)*r;
+    res.z = sin(theta)*cos(phi)*r;
+    return res;
+}
+
+double millis_to_dbm(double p_0, double p){
+  return 10*log10(p/p_0);
+}
+
 vector* intersect(ray* r, triangle* t){
     /* L'équation du plan est sous la forme (n|v) = cste, cette constante est égale à (a|n)
     En notant la droite associée au rayon A + tu, on souhaite (A + ku | n) = (a|n)
     ie (A|n) + k(u|n) = (a|n)
     ou encore
     k = ( (a|n) - (A|n) ) / (u|n)
-    Le cas (u|n) = 0 (rayon tangent au plan) renverra NULL sans autre forme de procès
+    Le cas (u|n) = 0 (rayon tangent au plan) renverra NULL
     */
-
 
     double s = dot_product(r->direction, t->n);
 
@@ -68,6 +84,7 @@ vector* intersect(ray* r, triangle* t){
     /* Si k est négatif, le point d'intersection se situe du mauvais côté de la demie-droite
     Si k est nul, l'origine du rayon est confondu avec le point d'intersection, on considère qu'il n'y a pas réflexion puisque le rayon part du triangle 
     */
+
     if (k<=0){
         return NULL;
     }
@@ -102,27 +119,28 @@ vector* intersect(ray* r, triangle* t){
     return p;
 }
 
-ray* reflect(ray* r, triangle* t, double complex ref_index, vector pola){
+ray* reflect(ray* r, triangle* t, double complex ref_index){
     vector* p = intersect(r, t);
     if (NULL == p){
         return NULL;
     }
     
-    // on calcule la composante normale du vecteur incident
+    // Calcul de la composante normale du vecteur incident
     double normal_component = dot_product(t->n, r->direction);
 
-    // on inverse la composante normale pour créer le rayon réfléchi
+    // On inverse la composante normale pour créer le rayon réfléchi
     vector new_dir;
     new_dir.x = r->direction.x - 2*(t->n).x*normal_component;
     new_dir.y = r->direction.y - 2*(t->n).y*normal_component;
     new_dir.z = r->direction.z - 2*(t->n).z*normal_component;
     
-    //On calcule la puissance du rayon réfléchi ainsi que la phase du champ E associé
+    // Calcul de la puissance du rayon réfléchi ainsi que la phase du champ E associé
 
     vector eik = normalize(r->direction);
-    
+    vector plane_normal = normalize(cross_product(eik, t->n));
+
     double n_bet = creal(ref_index);
-    double te_prop = length(cross_product(eik, pola));
+    double te_prop = abs(dot_product(r->E_field, plane_normal));
     
     double cos_in = fabs(dot_product(eik, t->n));
     double sin_in = sin(acos(cos_in));
@@ -133,48 +151,26 @@ ray* reflect(ray* r, triangle* t, double complex ref_index, vector pola){
 
     double pow_te = fabs(R_te) * fabs(R_te);
     double pow_tm = fabs(R_tm) * fabs(R_tm);
-
-    //fprintf(stderr, "Indice béton: %f\n Proportion TE: %f\n Cos incident: %f\n Sin incident: %f\n Cos transmis: %f\n R_te: %f\n R_tm: %f\n", n_bet, te_prop, cos_in,sin_in,cos_tr,R_te,R_tm);
-    
+   
     double new_power = r->power * (te_prop * pow_te + (1-te_prop) *pow_tm); 
+    
+    // On donne le nouveau vecteur de polarisation
+    vector new_pola; 
+
+    vector E_te = extern_prod(plane_normal,te_prop); 
+    vector E_tm = vector_diff(r->E_field,E_te);
+
+    new_pola = vector_add(extern_prod(E_te, R_te), extern_prod(E_tm, R_tm));
+
+    // Allocation du nouveau rayon et initialisation de ce dernier
     ray* res = malloc(sizeof(ray));
 
     res->origin = *p;
     res->direction = new_dir;
     res->power = new_power;
-    res-> phase = (2 * M_PI / wavelength) * length(*p) + (M_PI / 2);
+    res->phase = (2 * M_PI / wavelength) * length(*p) + (M_PI / 2);
+    res->E_field = new_pola;
     free(p);
 
     return res;
 }
-
-
-ray* diffuse(ray* r, triangle* t){
-    vector* p = intersect(r, t);
-
-    if (NULL == p){
-        return NULL;
-    }
-
-    ray* res = malloc(sizeof(ray));
-
-    res->origin = *p;
-
-    double theta, phi;
-
-
-    /* on génère deux angles pour créer un vecteur unitaire aléatoire
-    on utilise une méthode de Las Vegas pour que le vecteur soit du bon côté du plan du triangle */
-    do{
-        theta = (double) rand() / RAND_MAX * 2 * M_PI;
-        phi = (double) rand() / RAND_MAX * M_PI;
-        res->direction.x = sin(phi)*cos(theta);
-        res->direction.y = sin(phi)*sin(theta);
-        res->direction.z = cos(phi);
-    } while (dot_product(res->direction, r->direction) > 0);
-
-    free(p);
-
-    return res;
-}
-
