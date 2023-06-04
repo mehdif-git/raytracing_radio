@@ -124,7 +124,7 @@ ray* reflect(ray* r, triangle* t, double complex ref_index){
     if (NULL == p){
         return NULL;
     }
-    
+
     // Calcul de la composante normale du vecteur incident
     double normal_component = dot_product(t->n, r->direction);
 
@@ -134,13 +134,16 @@ ray* reflect(ray* r, triangle* t, double complex ref_index){
     new_dir.y = r->direction.y - 2*(t->n).y*normal_component;
     new_dir.z = r->direction.z - 2*(t->n).z*normal_component;
     
-    // Calcul de la puissance du rayon réfléchi ainsi que la phase du champ E associé
-
+    // Calcul de la puissance du rayon réfléchi
     vector eik = normalize(r->direction);
     vector plane_normal = normalize(cross_product(eik, t->n));
 
+    // Projection du vecteur E sur le plan d'incidence
+    vector E_te = extern_prod(plane_normal,te_prop); 
+    vector E_tm = vector_diff(r->E_field,E_te);
+
     double n_bet = creal(ref_index);
-    double te_prop = abs(dot_product(r->E_field, plane_normal));
+    double te_prop = abs(length(E_te)/length(r->E_field));
     
     double cos_in = fabs(dot_product(eik, t->n));
     double sin_in = sin(acos(cos_in));
@@ -155,11 +158,7 @@ ray* reflect(ray* r, triangle* t, double complex ref_index){
     double new_power = r->power * (te_prop * pow_te + (1-te_prop) *pow_tm); 
     
     // On donne le nouveau vecteur de polarisation
-    vector new_pola; 
-
-    vector E_te = extern_prod(plane_normal,te_prop); 
-    vector E_tm = vector_diff(r->E_field,E_te);
-
+    vector new_pola;
     new_pola = vector_add(extern_prod(E_te, R_te), extern_prod(E_tm, R_tm));
 
     // Allocation du nouveau rayon et initialisation de ce dernier

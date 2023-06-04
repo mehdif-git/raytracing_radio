@@ -162,6 +162,8 @@ ray* simulate_ray(ray* r, scene* s, int max_ref, vector rx){
 
 double recieved_power(scene *s, int ray_density, int max_reflections, vector rx){
   double total = 0;
+  vector los = vector_diff(rx, s->tx);
+
     for(int rot_1 = 0; rot_1<ray_density; rot_1++){
       for(int rot_2 = 0; rot_2<ray_density; rot_2++){
         

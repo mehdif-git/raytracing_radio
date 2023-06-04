@@ -19,14 +19,24 @@ int main(int argc, char *argv[]){
 
     // Les coordonnées du fichier obj sont dans l'ordre y z x
     vector tx;
-    sscanf(argv[5], "%lf", &(tx.y));
-    sscanf(argv[6], "%lf", &(tx.z));
-    sscanf(argv[7], "%lf", &(tx.x));
+    double txX, txY, txZ;
+    /*sscanf(argv[5], "%lf", &txY);
+    sscanf(argv[6], "%lf", &txZ);
+    sscanf(argv[7], "%lf", &txX);
+    */
+    tx.x = 608;
+    tx.y = 5;
+    tx.z = -1000;
 
     vector dir;
-    sscanf(argv[8], "%lf", &(dir.y));
-    sscanf(argv[9], "%lf", &(dir.z));
-    sscanf(argv[10],"%lf", &(dir.x));
+    double dirX, dirY, dirZ;
+    /*sscanf(argv[8], "%lf", &dirY);
+    sscanf(argv[9], "%lf", &dirZ);
+    sscanf(argv[10],"%lf", &dirX);
+    */
+    dir.x = 1/8;
+    dir.y = 0;
+    dir.z = 1;
 
     // Mise en place de la scène
     FILE* obj_file = fopen(argv[1], "r");
