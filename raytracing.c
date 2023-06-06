@@ -254,10 +254,12 @@ double recieved_power(ray ****paths, int ray_density, int max_reflections, vecto
         if(paths[i][j][k] != NULL){
           vector unit_line = normalize(paths[i][j][k]->direction);
           vector on_line = vector_diff(rx, paths[i][j][k]->origin);
-          vector proj_on_line = extern_prod(paths[i][j][k]->direction, dot_product(on_line,unit_line));
+          vector proj_on_line = extern_prod(unit_line, dot_product(on_line,unit_line));
           double distance_to_rx = length(vector_diff(on_line, proj_on_line));
+          fprintf(stderr, "Distance: %lf mètres \n", distance_to_rx);
           if(distance_to_rx < rx_size /*&& power_ratio > rsrp*/){
             total += paths[i][j][k]->power;
+            fprintf(stderr, "Puissance : %lf mW\n", paths[i][j][k]->power);
           }
         }
       }

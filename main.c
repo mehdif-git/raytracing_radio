@@ -24,9 +24,9 @@ int main(int argc, char *argv[]){
     sscanf(argv[6], "%lf", &txZ);
     sscanf(argv[7], "%lf", &txX);
     */
-    tx.x = 608;
+    tx.x = 98;
     tx.y = 5;
-    tx.z = -1000;
+    tx.z = -900;
 
     vector dir;
     double dirX, dirY, dirZ;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
     sscanf(argv[9], "%lf", &dirZ);
     sscanf(argv[10],"%lf", &dirX);
     */
-    dir.x = 1/8;
+    dir.x = -1/8;
     dir.y = 0;
     dir.z = 1;
 
