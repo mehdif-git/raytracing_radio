@@ -1,5 +1,5 @@
 CC = gcc
-SAFEFLAGS = -Wall -Wextra -g -fsanitize=address -O2
+SAFEFLAGS = -Wall -Wextra -g -pedantic -fsanitize=address -O2
 FASTFLAGS = -O3
 LDFLAGS = -lm
 

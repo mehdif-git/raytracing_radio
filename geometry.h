@@ -58,12 +58,4 @@ double millis_to_dbm(double p_0, double p);
 Renvoie NULL si l'intersection n'existe pas */
 vector* intersect(ray* r, triangle* t);
 
-/* Renvoie, s'il existe, le rayon réfléchi à partir du rayon incident et d'un triangle 
-Renvoie NULL si l'intersection n'existe pas */
-ray* reflect(ray* r, triangle* t, double _Complex ref_index);
-
-/* Renvoie en cas de collision un rayon réfléchi dans une direction aléatoire */
-ray* diffuse(ray* r, triangle* t);
-
-
 #endif

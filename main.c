@@ -57,8 +57,6 @@ int main(int argc, char *argv[]){
 
     free(path);
     free(s->triangles);
-    free(s->normals);
     free(s);
-
     return EXIT_SUCCESS;
 }
