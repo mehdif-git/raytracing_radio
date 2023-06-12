@@ -9,7 +9,7 @@
 #include "geometry.h"
 #include "raytracing.h"
 
-// On lance test nomFichier.obj ray_density max_reflextions nb_mesures txX txY txZ dirX dirY dirZ
+// On lance test nomFichier.obj ray_density max_reflextions nb_mesures
 int main(int argc, char *argv[]){
      
     int ray_density, max_reflexions, nb_mesures; 
@@ -20,20 +20,15 @@ int main(int argc, char *argv[]){
     // Les coordonnées du fichier obj sont dans l'ordre y z x
     vector tx;
     double txX, txY, txZ;
-    /*sscanf(argv[5], "%lf", &txY);
-    sscanf(argv[6], "%lf", &txZ);
-    sscanf(argv[7], "%lf", &txX);
-    */
+    
+    //Adaptation au modèle étudié
     tx.x = 98;
     tx.y = 5;
     tx.z = -900;
 
     vector dir;
     double dirX, dirY, dirZ;
-    /*sscanf(argv[8], "%lf", &dirY);
-    sscanf(argv[9], "%lf", &dirZ);
-    sscanf(argv[10],"%lf", &dirX);
-    */
+   
     dir.x = -1/8;
     dir.y = 0;
     dir.z = 1;

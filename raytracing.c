@@ -11,7 +11,7 @@ const double complex refractive_index = 2.31 - 0.12 * I; // Indice de réfractio
 const double wavelength = 0.3; // Longeur d'onde 900MHz
 const double rsrp = -100; // Rapport puissance reçue/puissance émise en dBm
 const double rx_size = 0.3; // Taille du récépteur, choix d'une longeur d'onde ici
-const double init_pow = 1000; // Puissance totale émise (en milliwatts)
+const double init_pow = 160000; // Puissance totale émise (en milliwatts)
 
 // Charge une scène à partir d'un fichier obj, ne fonctionne qu'avec des triangles
 scene* load_scene(FILE* obj_file, bool normals, bool textures, vector tx){   
@@ -84,20 +84,16 @@ ray* reflect(ray* r, triangle* t, double complex ref_index){
     }
 
     // Calcul de la composante normale du vecteur incident
-    double normal_component = dot_product(t->n, r->direction);
+    vector eik = normalize(r->direction);
+    double normal_component = dot_product(t->n, eik);
 
     // On inverse la composante normale pour créer le rayon réfléchi
-    vector new_dir;
-    new_dir.x = r->direction.x - 2*(t->n).x*normal_component;
-    new_dir.y = r->direction.y - 2*(t->n).y*normal_component;
-    new_dir.z = r->direction.z - 2*(t->n).z*normal_component;
-    
-    // Calcul de la puissance du rayon réfléchi
-    vector eik = normalize(r->direction);
-    vector plane_normal = normalize(cross_product(eik, t->n));
+    vector new_dir = vector_diff(eik , extern_prod(t->n, 2*normal_component));
 
     // Projection du vecteur E sur le plan d'incidence
+    vector plane_normal = normalize(cross_product(eik, t->n));
     double te_component = dot_product(r->E_field, plane_normal);
+
     vector E_te = extern_prod(plane_normal,te_component); 
     vector E_tm = vector_diff(r->E_field,E_te);
 
@@ -108,6 +104,8 @@ ray* reflect(ray* r, triangle* t, double complex ref_index){
     double sin_in = sin(acos(cos_in));
     double cos_tr = sqrt(1 - (1/n_bet)*(1/n_bet)*sin_in*sin_in);
     
+    // Calcul de la puissance du rayon réfléchi
+
     double R_te = (cos_in - n_bet * cos_tr)/(cos_in + n_bet * cos_tr);
     double R_tm = (n_bet * cos_in - cos_tr)/(n_bet * cos_in + cos_tr);
 
@@ -219,8 +217,8 @@ ray**** propagate(scene *s, int ray_density, int max_reflections){
   for(int rot_1 = 0; rot_1<ray_density; rot_1++){
     for(int rot_2 = 0; rot_2<ray_density; rot_2++){
         
-        double theta = 2*M_PI*rot_1;
-        double phi = M_PI*rot_2;
+        double theta = 2*M_PI*rot_1/ray_density;
+        double phi = M_PI*rot_2/ray_density;
 
         vector direction = sph_to_cart(1, theta, phi);
         
@@ -238,11 +236,12 @@ ray**** propagate(scene *s, int ray_density, int max_reflections){
         for(int k = 0; k<max_reflections;k++){ 
           paths[rot_1][rot_2][k] = sim[k];
         }
+
         free(launched);
         free(sim);
       }
     }
-  
+
   return paths;
 }  
 
@@ -256,10 +255,8 @@ double recieved_power(ray ****paths, int ray_density, int max_reflections, vecto
           vector on_line = vector_diff(rx, paths[i][j][k]->origin);
           vector proj_on_line = extern_prod(unit_line, dot_product(on_line,unit_line));
           double distance_to_rx = length(vector_diff(on_line, proj_on_line));
-          fprintf(stderr, "Distance: %lf mètres \n", distance_to_rx);
-          if(distance_to_rx < rx_size /*&& power_ratio > rsrp*/){
+          if(distance_to_rx < rx_size){
             total += paths[i][j][k]->power;
-            fprintf(stderr, "Puissance : %lf mW\n", paths[i][j][k]->power);
           }
         }
       }
@@ -272,9 +269,9 @@ void raytrace(scene *s, FILE *write_results, int ray_density, int max_reflection
   ray ****paths = propagate(s, ray_density, max_reflections);
   for(int i = 1; i < nb_mesures + 1; i++){
       // Mesure à distance croissante par rapport à l'emmeteur
-      vector rx = vector_add(extern_prod(direction,i), s->tx);
+      vector rx = vector_add(extern_prod(direction,5*i), s->tx);
       double recieved = recieved_power(paths, ray_density, max_reflections, rx);
-      fprintf(write_results, "%d,%lf\n", i, recieved);
+      fprintf(write_results, "%d,%lf\n", 5*i, recieved);
   }
   
   for(int i = 0; i<ray_density; i++){
